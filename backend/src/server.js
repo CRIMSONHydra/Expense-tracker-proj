@@ -1,7 +1,10 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { sql, initDB } from './config/db.js';
+
+import { initDB } from './config/db.js';
+import transactionRoutes from './routes/transactions.route.js';
+
 
 const app = express();
 
@@ -10,6 +13,8 @@ app.use(express.json());
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
+
+app.use('/api/transactions', transactionRoutes);
 
 //Connect db and start server
 initDB().then(() => {
