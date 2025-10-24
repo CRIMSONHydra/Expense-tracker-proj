@@ -4,13 +4,15 @@ import dotenv from 'dotenv'
 
 import { initDB } from './config/db.js';
 import transactionRoutes from './routes/transactions.route.js';
+import rateLimiter from './middlewares/rateLimiter.js';
 
 
 const app = express();
 
 //setup
-app.use(express.json());
 dotenv.config();
+app.use(rateLimiter)
+app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 
