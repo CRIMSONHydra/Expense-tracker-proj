@@ -121,7 +121,7 @@ export async function getSummaryById(req, res) {
       income: incomeRes[0].income,
       expenses: expensesRes[0].expenses
     });
-  } catch (error) {
+  } catch (e) {
     console.log("Error deleting transaction", e);
     res.status(500).send();
   }
