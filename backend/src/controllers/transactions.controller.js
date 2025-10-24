@@ -44,12 +44,85 @@ export async function createTransaction(req, res) {
     const transaction = await sql`
       INSERT INTO transactions(user_id, title, amount, category)
       VALUES(${user_id}, ${title}, ${amount}, ${category})
-      RETURNING *
-    `
+      RETURNING *;
+    `;
 
     res.status(201).json(transaction[0])
   } catch (e) {
     console.log("Error creating transaction", e);
+    res.status(500).send();
+  }
+}
+
+/*
+DELETE /api/transactions/:id
+Deletes the transaction with given id
+*/
+export async function deleteById(req, res) {
+  try {
+    const {id} = req.params;
+
+    if(isNaN(parseInt(id)))
+      return res.status(400).json({message: "Invalid id"});
+
+    const deletedTransaction = await sql`
+      DELETE FROM transactions
+      WHERE
+        id = ${id}
+      RETURNING *;
+    `;
+
+    if(!deletedTransaction)
+      return res.status(404).json({message: "id not found"});
+
+    res.status(200).json({message: "transaction deleted successfully"});
+  } catch (e) {
+    console.log("Error deleting transaction", e);
+    res.status(500).send();
+  }
+}
+
+/*
+GET /api/transactions/summary/:userId
+returns balance, income and expenses aggregated
+*/
+export async function getSummaryById(req, res) {
+  try {
+    const {userId} = req.params;
+
+    const balanceRes = await sql`
+      SELECT
+        COELESCE(SUM(amount), 0) AS balance
+      FROM transactions
+      WHERE
+        user_id = ${userId};
+    `;
+
+    const incomeRes = await sql`
+      SELECT
+        COELESCE(SUM(amount), 0) AS income
+      FROM transactions
+      WHERE
+        user_id = ${userId} AND
+        amount > 0;
+    `;
+
+    const expensesRes = await sql`
+      SELECT
+        COELESCE(SUM(amount), 0) AS expenses
+      FROM transactions
+      WHERE
+        user_id = ${userId} AND
+        amount < 0;
+    `;
+
+    res.status(200).json({
+      balance: balanceRes[0].balance,
+      income: incomeRes[0].income,
+      expenses: expensesRes[0].expenses
+    });
+  } catch (error) {
+    console.log("Error deleting transaction", e);
     res.status(500).send();
   }
 }
