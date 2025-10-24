@@ -18,6 +18,7 @@ export default function Page() {
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
     if (!isLoaded) return;
+    setError(""); // Clear previous errors
 
     // Start the sign-in process using the email and password provided
     try {
@@ -37,11 +38,20 @@ export default function Page() {
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
     } catch (err) {
+      // --- THIS IS THE MODIFIED BLOCK ---
+
+      // Log the full error for debugging
+      console.error(JSON.stringify(err, null, 2));
+
+      // Set user-friendly error messages
       if (err.errors?.[0]?.code === "form_password_incorrect") {
         setError("Password is incorrect. Please try again.");
+      } else if (err.errors?.[0]?.code === "form_identifier_not_found") {
+        setError("Email not found. Please check and try again.");
       } else {
-        setError("An error occurred. Please try again.");
+        setError("An error occurred during sign-in. Please try again.");
       }
+      // --- END OF MODIFICATION ---
     }
   };
 
@@ -53,7 +63,7 @@ export default function Page() {
       enableAutomaticScroll={true}
       extraScrollHeight={50}
     >
-      <View style={styles.container}>
+      <View style={{ ...styles.container, paddingTop: 60 }}>
         <Image source={require("../../assets/images/revenue-i4.png")} style={styles.illustration} />
         <Text style={styles.title}>Welcome Back</Text>
 
@@ -68,7 +78,7 @@ export default function Page() {
         ) : null}
 
         <TextInput
-          style={[styles.input, error && styles.errorInput]}
+          style={[styles.input, !!error && styles.errorInput]} // Use !!error
           autoCapitalize="none"
           value={emailAddress}
           placeholder="Enter email"
@@ -77,7 +87,7 @@ export default function Page() {
         />
 
         <TextInput
-          style={[styles.input, error && styles.errorInput]}
+          style={[styles.input, !!error && styles.errorInput]} // Use !!error
           value={password}
           placeholder="Enter password"
           placeholderTextColor="#9A8478"
