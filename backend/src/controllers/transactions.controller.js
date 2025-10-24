@@ -72,7 +72,7 @@ export async function deleteById(req, res) {
       RETURNING *;
     `;
 
-    if(!deletedTransaction)
+    if(deletedTransaction.length === 0)
       return res.status(404).json({message: "id not found"});
 
     res.status(200).json({message: "transaction deleted successfully"});
