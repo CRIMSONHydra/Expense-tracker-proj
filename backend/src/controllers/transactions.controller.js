@@ -92,7 +92,7 @@ export async function getSummaryById(req, res) {
 
     const balanceRes = await sql`
       SELECT
-        COELESCE(SUM(amount), 0) AS balance
+        COALESCE(SUM(amount), 0) AS balance
       FROM transactions
       WHERE
         user_id = ${userId};
@@ -100,7 +100,7 @@ export async function getSummaryById(req, res) {
 
     const incomeRes = await sql`
       SELECT
-        COELESCE(SUM(amount), 0) AS income
+        COALESCE(SUM(amount), 0) AS income
       FROM transactions
       WHERE
         user_id = ${userId} AND
@@ -109,7 +109,7 @@ export async function getSummaryById(req, res) {
 
     const expensesRes = await sql`
       SELECT
-        COELESCE(SUM(amount), 0) AS expenses
+        (COALESCE(SUM(amount), 0)*-1) AS expenses
       FROM transactions
       WHERE
         user_id = ${userId} AND
@@ -122,7 +122,7 @@ export async function getSummaryById(req, res) {
       expenses: expensesRes[0].expenses
     });
   } catch (e) {
-    console.log("Error deleting transaction", e);
+    console.log("Error getting the summary", e);
     res.status(500).send();
   }
 }
