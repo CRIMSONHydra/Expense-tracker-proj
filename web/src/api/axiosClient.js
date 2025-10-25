@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: 'https://expense-tracker-proj.onrender.com:3001/api', // Adjust if your backend port is different
+  baseURL: '/api', // Adjust if your backend port is different
 });
 
 // Interceptor to add the token to every request
