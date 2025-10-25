@@ -1,7 +1,5 @@
 # Expense Tracker
 
-[![Deploy to Render](https://render.com/images/external-badge.svg)](https://expense-tracker-proj.onrender.com/)
-
 A clean and simple full-stack application for tracking your personal finances. Register an account, log your income and expenses, and get an instant summary of your financial health.
 
 This project is a monorepo containing a React (Vite + Tailwind) frontend (`web`) and a Node.js (Express) backend (`backend`).
