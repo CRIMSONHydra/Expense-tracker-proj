@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
-import { styles } from "../../assets/styles/auth.styles.js";
+import { styles } from "@/assets/styles/auth.styles.js";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
 import { Image } from "expo-image";
@@ -21,63 +21,54 @@ export default function SignUpScreen() {
   // Handle submission of sign-up form
   const onSignUpPress = async () => {
     if (!isLoaded) return;
-    setError(""); // Clear previous errors
 
+    // Start sign-up process using email and password provided
     try {
       await signUp.create({
         emailAddress,
         password,
       });
 
+      // Send user an email with verification code
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      setPendingVerification(true);
 
+      // Set 'pendingVerification' to true to display second form
+      // and capture OTP code
+      setPendingVerification(true);
     } catch (err) {
       if (err.errors?.[0]?.code === "form_identifier_exists") {
         setError("That email address is already in use. Please try another.");
       } else {
         setError("An error occurred. Please try again.");
       }
-      // Log the full error for debugging
-      console.error("Sign Up Error:", JSON.stringify(err, null, 2));
+      console.log(err);
     }
   };
 
   // Handle submission of verification form
   const onVerifyPress = async () => {
     if (!isLoaded) return;
-    setError(""); // Clear previous errors
 
     try {
+      // Use the code the user provided to attempt verification
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
         code,
       });
 
+      // If verification was completed, set the session to active
+      // and redirect the user
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
         router.replace("/");
       } else {
-        // This case shouldn't be hit often, but it's good to log
-        console.error("Verification not complete:", JSON.stringify(signUpAttempt, null, 2));
-        setError("Verification was not completed. Please try again.");
+        // If the status is not complete, check why. User may need to
+        // complete further steps.
+        console.error(JSON.stringify(signUpAttempt, null, 2));
       }
     } catch (err) {
-      console.error("--- CAUGHT VERIFICATION ERROR ---");
-      console.error("1. Logging err object directly:", err);
-      console.error("2. Logging err.message:", err.message);
-      console.error("3. Logging full JSON (in case it's Clerk):", JSON.stringify(err, null, 2));
-      console.error("--- END OF ERROR ---");
-      // -------------------------------------------------
-
-      // This sets the UI message
-      if (err.errors?.[0]?.code === "form_param_invalid") {
-        setError("The verification code is invalid. Please try again.");
-      } else if (err.errors?.[0]?.code === "verification_expired") {
-        setError("The verification code has expired. Please request a new one.");
-      } else {
-        // Use the error message in the UI if it exists
-        setError(err.message || "An error occurred during verification. Please try again.");
-      }
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
+      console.error(JSON.stringify(err, null, 2));
     }
   };
 
@@ -97,7 +88,7 @@ export default function SignUpScreen() {
         ) : null}
 
         <TextInput
-          style={[styles.verificationInput, !!error && styles.errorInput]}
+          style={[styles.verificationInput, error && styles.errorInput]}
           value={code}
           placeholder="Enter your verification code"
           placeholderTextColor="#9A8478"
@@ -117,7 +108,6 @@ export default function SignUpScreen() {
       contentContainerStyle={{ flexGrow: 1 }}
       enableOnAndroid={true}
       enableAutomaticScroll={true}
-      extraScrollHeight={100}
     >
       <View style={styles.container}>
         <Image source={require("../../assets/images/revenue-i2.png")} style={styles.illustration} />
@@ -135,7 +125,7 @@ export default function SignUpScreen() {
         ) : null}
 
         <TextInput
-          style={[styles.input, !!error && styles.errorInput]}
+          style={[styles.input, error && styles.errorInput]}
           autoCapitalize="none"
           value={emailAddress}
           placeholderTextColor="#9A8478"
@@ -144,7 +134,7 @@ export default function SignUpScreen() {
         />
 
         <TextInput
-          style={[styles.input, !!error && styles.errorInput]}
+          style={[styles.input, error && styles.errorInput]}
           value={password}
           placeholder="Enter password"
           placeholderTextColor="#9A8478"

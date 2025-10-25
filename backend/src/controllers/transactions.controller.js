@@ -1,12 +1,13 @@
 import { sql } from "../config/db.js";
 
 /*
-GET /api/transactions/:userId
-fetches all transactions matching userId
+GET /api/transactions/
+fetches all transactions for the LOGGED IN user
 */
-export async function getTransactionsById(req, res) {
+export async function getTransactions(req, res) {
   try {
-    const {userId} = req.params;
+    // Get userId from the auth middleware, not from params
+    const userId = req.user.id; 
 
     const transactions = await sql`
       SELECT *
@@ -26,9 +27,8 @@ export async function getTransactionsById(req, res) {
 
 /*
 POST /api/transactions/
-creates a transaction
+creates a transaction for the LOGGED IN user
 {
-  user_id: "123"
   title: "groceries"
   category: "expense"
   amount: -2000
@@ -36,10 +36,13 @@ creates a transaction
 */
 export async function createTransaction(req, res) {
   try {
-    const {title, amount, category, user_id} = req.body;
+    const { title, amount, category } = req.body;
+    
+    // Get userId from the auth middleware
+    const user_id = req.user.id;
 
-    if(!title || !category || !user_id || amount === undefined)
-      return res.status(400).json({message: "Bad request"});
+    if (!title || !category || amount === undefined)
+      return res.status(400).json({ message: "Bad request" });
 
     const transaction = await sql`
       INSERT INTO transactions(user_id, title, amount, category)
@@ -47,7 +50,7 @@ export async function createTransaction(req, res) {
       RETURNING *;
     `;
 
-    res.status(201).json(transaction[0])
+    res.status(201).json(transaction[0]);
   } catch (e) {
     console.log("Error creating transaction", e);
     res.status(500).send();
@@ -56,26 +59,28 @@ export async function createTransaction(req, res) {
 
 /*
 DELETE /api/transactions/:id
-Deletes the transaction with given id
+Deletes the transaction with given id, only if it belongs to the logged in user
 */
 export async function deleteById(req, res) {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
+    const userId = req.user.id; // Get userId from auth middleware
 
-    if(isNaN(parseInt(id)))
-      return res.status(400).json({message: "Invalid id"});
+    if (isNaN(parseInt(id)))
+      return res.status(400).json({ message: "Invalid id" });
 
     const deletedTransaction = await sql`
       DELETE FROM transactions
       WHERE
-        id = ${id}
+        id = ${id} AND
+        user_id = ${userId} -- This ensures user can only delete their own
       RETURNING *;
     `;
 
-    if(deletedTransaction.length === 0)
-      return res.status(404).json({message: "id not found"});
+    if (deletedTransaction.length === 0)
+      return res.status(404).json({ message: "id not found or not authorized" });
 
-    res.status(200).json({message: "transaction deleted successfully"});
+    res.status(200).json({ message: "transaction deleted successfully" });
   } catch (e) {
     console.log("Error deleting transaction", e);
     res.status(500).send();
@@ -83,12 +88,13 @@ export async function deleteById(req, res) {
 }
 
 /*
-GET /api/transactions/summary/:userId
-returns balance, income and expenses aggregated
+GET /api/transactions/summary
+returns balance, income and expenses aggregated for the LOGGED IN user
 */
-export async function getSummaryById(req, res) {
+export async function getSummary(req, res) {
   try {
-    const {userId} = req.params;
+    // Get userId from the auth middleware
+    const userId = req.user.id; 
 
     const balanceRes = await sql`
       SELECT
